@@ -1,0 +1,130 @@
+@import "tailwindcss";
+
+:root {
+  --background: oklch(0.95 0.01 80);
+  --foreground: oklch(0.2 0.02 50);
+  --card: oklch(0.99 0.005 80);
+  --card-foreground: oklch(0.2 0.02 50);
+  --popover: oklch(0.99 0.005 80);
+  --popover-foreground: oklch(0.2 0.02 50);
+  --primary: oklch(0.25 0.02 50);
+  --primary-foreground: oklch(0.98 0.01 80);
+  --secondary: oklch(0.92 0.015 80);
+  --secondary-foreground: oklch(0.25 0.02 50);
+  --muted: oklch(0.9 0.015 80);
+  --muted-foreground: oklch(0.45 0.02 50);
+  --accent: oklch(0.55 0.12 145);
+  --accent-foreground: oklch(0.98 0.01 80);
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.85 0.02 80);
+  --input: oklch(0.92 0.015 80);
+  --ring: oklch(0.45 0.08 145);
+  --radius: 0.5rem;
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-geist-sans), system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@keyframes accordion-down {
+  from { height: 0; }
+  to { height: var(--radix-accordion-content-height); }
+}
+
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); }
+  to { height: 0; }
+}
+
+.animate-accordion-down {
+  animation: accordion-down 0.2s ease-out;
+}
+
+.animate-accordion-up {
+  animation: accordion-up 0.2s ease-out;
+}
+
+.estate-map-marker {
+  background: transparent;
+  border: 0;
+}
+
+.estate-map-marker div {
+  background: oklch(0.25 0.02 50);
+  color: #fff;
+  border-radius: 9999px;
+  border: 2px solid #fff;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+  font-size: 11px;
+  font-weight: 700;
+  height: 28px;
+  min-width: 58px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.estate-map-marker div.selected {
+  background: oklch(0.55 0.12 145);
+}
+
+.estate-map-cluster {
+  background: transparent;
+  border: 0;
+}
+
+.estate-map-cluster div {
+  height: 42px;
+  width: 42px;
+  border-radius: 9999px;
+  border: 2px solid #fff;
+  background: #2a1f1b;
+  color: #f6f1eb;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+  animation: clusterPulse 1.8s infinite;
+}
+
+@keyframes clusterPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}

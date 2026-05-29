@@ -1,0 +1,160 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String           @id @default(cuid())
+  clerkId         String?          @unique
+  email           String           @unique
+  name            String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  portfolio       Portfolio?
+  savedProperties SavedProperty[]
+  chatHistory     ChatMessage[]
+  watchlists      Watchlist[]
+  savedSearches   SavedSearch[]
+}
+
+model Property {
+  id                   String          @id @default(cuid())
+  address              String
+  city                 String            @default("Hartford")
+  state                String            @default("CT")
+  zipCode              String            @default("06103")
+  latitude             Float
+  longitude            Float
+  price                Float
+  beds                 Int
+  baths                Float
+  sqft                 Int
+  propertyType         PropertyType
+  imageUrl             String
+  images               String[]
+  estimatedRoi         Float
+  capRate              Float
+  rentalYield          Float
+  appreciationForecast Float
+  aiScore              Float
+  riskScore            Float
+  undervalued          Boolean           @default(false)
+  rentalDemand         Float
+  yearBuilt            Int?
+  description          String?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  aiReports            AIReport[]
+  savedBy              SavedProperty[]
+  comparables          Comparable[]      @relation("SubjectProperty")
+  comparableTo         Comparable[]      @relation("ComparableProperty")
+  marketMetrics        MarketMetric[]
+}
+
+model MarketMetric {
+  id         String   @id @default(cuid())
+  propertyId String?
+  property   Property? @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  zipCode    String
+  metricType String
+  value      Float
+  period     String
+  recordedAt DateTime @default(now())
+}
+
+model AIReport {
+  id              String   @id @default(cuid())
+  propertyId      String
+  property        Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  recommendation  String
+  confidence      Float
+  riskExplanation String
+  investmentThesis String
+  exitStrategy    String
+  summary         String
+  agentType       String
+  createdAt       DateTime @default(now())
+}
+
+model Portfolio {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalValue      Float    @default(0)
+  monthlyCashFlow Float    @default(0)
+  roi             Float    @default(0)
+  rentalYield     Float    @default(0)
+  holdings        PortfolioHolding[]
+  updatedAt       DateTime @updatedAt
+}
+
+model PortfolioHolding {
+  id           String   @id @default(cuid())
+  portfolioId  String
+  portfolio    Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  propertyId   String
+  purchasePrice Float
+  shares       Float    @default(1)
+  acquiredAt   DateTime @default(now())
+}
+
+model SavedProperty {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, propertyId])
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String
+  content   String
+  sessionId String
+  createdAt DateTime @default(now())
+}
+
+model Watchlist {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  propertyIds String[]
+  createdAt DateTime @default(now())
+}
+
+model SavedSearch {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  query     String
+  filters   Json
+  createdAt DateTime @default(now())
+}
+
+model Comparable {
+  id                String   @id @default(cuid())
+  subjectPropertyId String
+  subjectProperty   Property @relation("SubjectProperty", fields: [subjectPropertyId], references: [id], onDelete: Cascade)
+  comparableId      String
+  comparableProperty Property @relation("ComparableProperty", fields: [comparableId], references: [id], onDelete: Cascade)
+  similarityScore   Float
+}
+
+enum PropertyType {
+  SINGLE_FAMILY
+  MULTIFAMILY
+  CONDO
+  TOWNHOUSE
+  COMMERCIAL
+}
