@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { API_URL } from "@/lib/api";
-import { MOCK_PROPERTIES } from "@/lib/property-generator";
+import { supabase } from "@/lib/supabase";
 
 const SUGGESTED_PROMPTS = [
   "Which properties have the best cash flow?",
@@ -20,41 +20,24 @@ interface Message {
   content: string;
 }
 
-function mockChat(message: string): string {
-  const msg = message.toLowerCase();
-  if (msg.includes("cash flow")) {
-    const top = [...MOCK_PROPERTIES]
-      .sort((a, b) => b.monthlyCashFlow - a.monthlyCashFlow)
-      .slice(0, 3);
-    return `**Top cash flow opportunities:** ${top.map((p) => `${p.address} ($${p.monthlyCashFlow}/mo)`).join(", ")}. Consider 8% vacancy stress test.`;
-  }
-  if (msg.includes("undervalued") || msg.includes("multifamily")) {
-    const und = MOCK_PROPERTIES.filter((p) => p.undervalued).slice(0, 4);
-    return `**Undervalued flags:**\n${und.map((p) => `• ${p.address} — AI ${p.aiScore}, ROI ${p.estimatedRoi}%`).join("\n")}`;
-  }
-  if (msg.includes("hartford") || msg.includes("market")) {
-    return "**Market snapshot:** Sentiment improving. Avg yield 5.8%, appreciation ~4.2%. Multifamily leads risk-adjusted returns.";
-  }
-  return `I analyzed **${MOCK_PROPERTIES.length} listings** across multiple markets. Ask about cash flow, undervalued assets, or market trends.`;
-}
-
 async function streamChat(
   message: string,
   onChunk: (text: string) => void
 ): Promise<void> {
   try {
+    const token = supabase
+      ? (await supabase.auth.getSession()).data.session?.access_token ?? null
+      : null;
     const res = await fetch(`${API_URL}/api/v1/chat/stream`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
       body: JSON.stringify({ message }),
     });
     if (!res.ok || !res.body) {
-      const text = mockChat(message);
-      for (const word of text.split(" ")) {
-        onChunk(word + " ");
-        await new Promise((r) => setTimeout(r, 30));
-      }
-      return;
+      throw new Error("Chat API unavailable");
     }
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
@@ -70,11 +53,7 @@ async function streamChat(
       }
     }
   } catch {
-    const text = mockChat(message);
-    for (const word of text.split(" ")) {
-      onChunk(word + " ");
-      await new Promise((r) => setTimeout(r, 25));
-    }
+    onChunk("EstateAI chat is temporarily unavailable. Please try again.");
   }
 }
 

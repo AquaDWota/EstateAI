@@ -35,24 +35,27 @@ export function MortgageCalculator({ defaultPrice = 350000 }: { defaultPrice?: n
       <CardContent className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="text-xs text-slate-500">Purchase price</label>
+            <label htmlFor="mortgage-price" className="text-xs text-slate-500">Purchase price</label>
             <Input
+              id="mortgage-price"
               type="number"
               value={price}
               onChange={(e) => setPrice(Number(e.target.value))}
             />
           </div>
           <div>
-            <label className="text-xs text-slate-500">Down payment %</label>
+            <label htmlFor="mortgage-down" className="text-xs text-slate-500">Down payment %</label>
             <Input
+              id="mortgage-down"
               type="number"
               value={down}
               onChange={(e) => setDown(Number(e.target.value))}
             />
           </div>
           <div>
-            <label className="text-xs text-slate-500">Interest rate %</label>
+            <label htmlFor="mortgage-rate" className="text-xs text-slate-500">Interest rate %</label>
             <Input
+              id="mortgage-rate"
               type="number"
               step="0.1"
               value={rate}
@@ -60,8 +63,9 @@ export function MortgageCalculator({ defaultPrice = 350000 }: { defaultPrice?: n
             />
           </div>
           <div>
-            <label className="text-xs text-slate-500">Term (years)</label>
+            <label htmlFor="mortgage-years" className="text-xs text-slate-500">Term (years)</label>
             <Input
+              id="mortgage-years"
               type="number"
               value={years}
               onChange={(e) => setYears(Number(e.target.value))}

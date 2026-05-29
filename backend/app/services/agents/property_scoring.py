@@ -1,5 +1,5 @@
 from app.services.agents.base import BaseAgent
-from app.services.data_store import PROPERTIES, get_property
+from app.services.property_repository import property_repository
 
 
 class PropertyScoringAgent(BaseAgent):
@@ -8,13 +8,16 @@ class PropertyScoringAgent(BaseAgent):
 
     async def run(self, params: dict) -> dict:
         property_id = params.get("property_id")
+        properties = await property_repository.list_properties(limit=300, offset=0)
+        if not properties:
+            return self._result({"error": "No properties available for scoring"})
         if property_id:
-            prop = get_property(property_id)
+            prop = next((item for item in properties if item["id"] == property_id), None)
             if not prop:
                 return self._result({"error": "Property not found"})
             return self._result(self._score_one(prop))
 
-        scored = [self._score_one(p) for p in PROPERTIES[:20]]
+        scored = [self._score_one(p) for p in properties[:20]]
         return self._result({"topScored": scored})
 
     def _score_one(self, p: dict) -> dict:

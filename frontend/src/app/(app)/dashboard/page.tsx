@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   DollarSign,
   Percent,
@@ -19,7 +19,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PropertyCard } from "@/components/properties/property-card";
 import { PropertyMap } from "@/components/maps/property-map";
-import { getLocalDashboard } from "@/lib/api-local";
 import { formatCurrency } from "@/lib/utils";
 import { useAppStore } from "@/store/use-app-store";
 import type { PropertyData } from "@/lib/property-generator";
@@ -27,18 +26,43 @@ import { apiFetch } from "@/lib/api";
 import Link from "next/link";
 import { MarketNewsFeed } from "@/components/dashboard/market-news";
 
+type DashboardData = {
+  portfolio: {
+    totalValue: number;
+    monthlyCashFlow: number;
+    roi: number;
+    rentalYield: number;
+    propertyCount: number;
+  };
+  marketSentimentIndex: number;
+  aiOpportunityFeed: {
+    id: string;
+    title: string;
+    message: string;
+    aiScore: number;
+    type: "opportunity" | "insight";
+  }[];
+  topOpportunities: PropertyData[];
+  undervaluedCount: number;
+  charts: {
+    appreciation: { month: string; value: number }[];
+    rentalDemand: { month: string; demand: number }[];
+  };
+  heatmap: PropertyData[];
+  economicIndicators: Record<string, number>;
+  aiConfidenceScore: number;
+  riskScore: number;
+};
+
 export default function DashboardPage() {
-  const [data, setData] = useState<ReturnType<typeof getLocalDashboard> | null>(null);
   const timeRange = useAppStore((s) => s.timeRange);
   const setTimeRange = useAppStore((s) => s.setTimeRange);
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["dashboard"],
+    queryFn: () => apiFetch<DashboardData>("/dashboard"),
+  });
 
-  useEffect(() => {
-    apiFetch<ReturnType<typeof getLocalDashboard>>("/dashboard")
-      .then(setData)
-      .catch(() => setData(getLocalDashboard()));
-  }, []);
-
-  if (!data) {
+  if (isLoading || !data) {
     return (
       <div className="space-y-4">
         <div className="h-8 w-48 animate-pulse rounded-lg bg-slate-200" />
@@ -47,6 +71,19 @@ export default function DashboardPage() {
             <div key={i} className="h-32 animate-pulse rounded-2xl bg-slate-200" />
           ))}
         </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4">
+        <p className="text-sm text-destructive">
+          Dashboard data is unavailable right now.
+        </p>
+        <Button variant="outline" size="sm" className="mt-3" onClick={() => void refetch()}>
+          Retry
+        </Button>
       </div>
     );
   }

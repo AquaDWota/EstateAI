@@ -1,5 +1,5 @@
 from app.services.agents.base import BaseAgent
-from app.services.data_store import PROPERTIES
+from app.services.property_repository import property_repository
 
 
 class PortfolioOptimizationAgent(BaseAgent):
@@ -8,8 +8,11 @@ class PortfolioOptimizationAgent(BaseAgent):
 
     async def run(self, params: dict) -> dict:
         risk_tolerance = params.get("riskTolerance", "moderate")
+        properties = await property_repository.list_properties(limit=300, offset=0)
+        if not properties:
+            return self._result({"error": "No properties available for portfolio optimization"})
         top = sorted(
-            PROPERTIES,
+            properties,
             key=lambda x: x["estimatedRoi"] / max(x["riskScore"], 1),
             reverse=True,
         )[:8]

@@ -1,8 +1,9 @@
 "use client";
 
-import { use, useMemo } from "react";
+import { use } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import {
   Area,
   AreaChart,
@@ -22,7 +23,8 @@ import {
   Users,
   Bookmark,
 } from "lucide-react";
-import { getLocalProperty, getLocalProperties } from "@/lib/api-local";
+import { apiFetch } from "@/lib/api";
+import type { PropertyData } from "@/lib/property-generator";
 import { formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,17 +41,32 @@ export default function PropertyDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const property = getLocalProperty(id);
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["property-detail", id],
+    queryFn: () =>
+      apiFetch<{ property: PropertyData; comparables: PropertyData[] }>(`/properties/${id}`),
+  });
+  const property = data?.property;
   const watchlist = useAppStore((s) => s.watchlist);
   const addToWatchlist = useAppStore((s) => s.addToWatchlist);
   const removeFromWatchlist = useAppStore((s) => s.removeFromWatchlist);
 
-  const comparables = useMemo(() => {
-    if (!property) return [];
-    return getLocalProperties({ propertyType: property.propertyType }).filter(
-      (p) => p.id !== id
-    ).slice(0, 3);
-  }, [property, id]);
+  const comparables = data?.comparables ?? [];
+
+  if (isLoading) {
+    return <div className="h-[70vh] animate-pulse rounded bg-muted" />;
+  }
+
+  if (isError) {
+    return (
+      <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4">
+        <p className="text-sm text-destructive">Unable to load property details.</p>
+        <Button variant="outline" size="sm" className="mt-3" onClick={() => void refetch()}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
 
   if (!property) notFound();
 
@@ -103,6 +120,7 @@ export default function PropertyDetailPage({
             <Button
               variant="outline"
               size="icon"
+              aria-label={onWatchlist ? "Remove from watchlist" : "Save to watchlist"}
               onClick={() =>
                 onWatchlist ? removeFromWatchlist(id) : addToWatchlist(id)
               }

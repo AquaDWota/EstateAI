@@ -27,6 +27,7 @@ export default function HomePage() {
         <section className="relative overflow-hidden py-24 sm:py-32">
           <div className="absolute inset-0 -z-20">
             <iframe
+              title="EstateAI market overview map"
               src="https://www.openstreetmap.org/export/embed.html?bbox=-124.8%2C24.3%2C-66.9%2C49.4&layer=mapnik"
               width="100%"
               height="100%"

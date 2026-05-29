@@ -5,8 +5,8 @@ import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { PropertyCard } from "@/components/properties/property-card";
 import { PropertyMap } from "@/components/maps/property-map";
-import { getLocalProperties } from "@/lib/api-local";
-import { MOCK_PROPERTIES } from "@/lib/property-generator";
+import { apiFetch } from "@/lib/api";
+import type { PropertyData } from "@/lib/property-generator";
 import { useAppStore } from "@/store/use-app-store";
 import { FloatingSearch } from "@/components/ai/floating-search";
 import { SmartFilterBar } from "@/components/ai/smart-filter-bar";
@@ -31,7 +31,12 @@ export default function PropertiesPage() {
     }
   }, []);
 
-  const { data: filteredProperties = [] } = useQuery({
+  const {
+    data: filteredProperties = [],
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: [
       "properties",
       query,
@@ -51,20 +56,26 @@ export default function PropertiesPage() {
         .filter(Boolean)
         .join(" ");
 
-      return getLocalProperties({
-        q: effectiveQuery || undefined,
-      });
+      const params = new URLSearchParams();
+      params.set("limit", "100");
+      if (effectiveQuery) params.set("q", effectiveQuery);
+      const payload = await apiFetch<{ items: PropertyData[] }>(
+        `/properties?${params.toString()}`,
+        { method: "GET" }
+      );
+      return payload.items;
     },
   });
 
   const marketCount = useMemo(
-    () => new Set(MOCK_PROPERTIES.map((p) => `${p.city}, ${p.state}`)).size,
-    []
+    () => new Set(filteredProperties.map((p) => `${p.city}, ${p.state}`)).size,
+    [filteredProperties]
   );
   const properties = filteredProperties;
 
   const mapCenter = useMemo(() => {
-    const source = properties.length > 0 ? properties : MOCK_PROPERTIES;
+    const source = properties;
+    if (source.length === 0) return { lat: 39.5, lng: -98.35 };
     const latitude =
       source.reduce((sum, p) => sum + p.latitude, 0) / Math.max(source.length, 1);
     const longitude =
@@ -74,6 +85,36 @@ export default function PropertiesPage() {
 
   const selectedProperty =
     properties.find((p) => p.id === selectedPropertyId) || properties[0];
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        <div className="h-8 w-48 animate-pulse rounded bg-muted" />
+        <div className="h-16 animate-pulse rounded bg-muted" />
+        <div className="grid gap-4 xl:grid-cols-[460px_minmax(0,1fr)]">
+          <div className="h-[65vh] animate-pulse rounded bg-muted" />
+          <div className="h-[65vh] animate-pulse rounded bg-muted" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4">
+        <p className="text-sm text-destructive">
+          Unable to load properties right now.
+        </p>
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          className="mt-2 text-sm font-medium underline"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -109,7 +150,7 @@ export default function PropertiesPage() {
                 onFocus={() => setSelectedPropertyId(p.id)}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.03 }}
+                transition={{ delay: idx < 12 ? idx * 0.015 : 0, duration: 0.2 }}
               >
                 <PropertyCard
                   property={p}

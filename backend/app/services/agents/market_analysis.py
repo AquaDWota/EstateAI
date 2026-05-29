@@ -1,5 +1,5 @@
 from app.services.agents.base import BaseAgent
-from app.services.data_store import PROPERTIES
+from app.services.property_repository import property_repository
 
 
 class MarketAnalysisAgent(BaseAgent):
@@ -9,13 +9,16 @@ class MarketAnalysisAgent(BaseAgent):
     async def run(self, params: dict) -> dict:
         zip_code = params.get("zipCode")
         city = params.get("city")
-        subset = PROPERTIES
+        properties = await property_repository.list_properties(limit=300, offset=0)
+        if not properties:
+            return self._result({"error": "No properties available for analysis"})
+        subset = properties
         if zip_code:
-            subset = [p for p in PROPERTIES if p["zipCode"] == zip_code]
+            subset = [p for p in properties if p["zipCode"] == zip_code]
         elif city:
-            subset = [p for p in PROPERTIES if p["city"].lower() == city.lower()]
+            subset = [p for p in properties if p["city"].lower() == city.lower()]
         if not subset:
-            subset = PROPERTIES
+            subset = properties
 
         avg_appreciation = sum(p["appreciationForecast"] for p in subset) / len(subset)
         avg_yield = sum(p["rentalYield"] for p in subset) / len(subset)

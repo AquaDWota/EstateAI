@@ -1,0 +1,52 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure CI is green
+        run: echo "Run this workflow after CI passes on target commit."
+
+  deploy-frontend:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy frontend
+        run: |
+          echo "Connect Vercel deployment command here."
+          echo "Environment: ${{ inputs.environment }}"
+
+  deploy-backend:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run migrations
+        run: |
+          echo "Run prisma migrate deploy and backend migration checks here."
+      - name: Deploy backend
+        run: |
+          echo "Connect Railway/Render deploy command here."
+          echo "Environment: ${{ inputs.environment }}"
+
+  rollback-note:
+    needs: [deploy-frontend, deploy-backend]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Rollback reminder
+        run: echo "If deployment issues occur, follow docs/runbooks/rollback.md"

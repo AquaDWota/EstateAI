@@ -1,21 +1,30 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, status
 
-from app.services.data_store import PROPERTIES
+from app.core.auth import AuthenticatedUser, CurrentUser
+from app.services.property_repository import property_repository
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 
 @router.get("")
-async def get_dashboard():
-    undervalued = [p for p in PROPERTIES if p["undervalued"]]
-    top_opps = sorted(PROPERTIES, key=lambda x: x["aiScore"], reverse=True)[:6]
+async def get_dashboard(_: AuthenticatedUser = CurrentUser):
+    try:
+        properties = await property_repository.list_properties(limit=200, offset=0)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Dashboard data source is unavailable.",
+        ) from exc
+
+    undervalued = [p for p in properties if p["undervalued"]]
+    top_opps = sorted(properties, key=lambda x: x["aiScore"], reverse=True)[:6]
     total_value = 2_840_000
-    monthly_cash_flow = sum(p["monthlyCashFlow"] for p in PROPERTIES[:5]) // 5 * 3
+    monthly_cash_flow = round(sum(p["price"] * 0.0032 for p in properties[:5]))
     sentiment = min(
         100,
         round(
             55
-            + sum(p["appreciationForecast"] for p in PROPERTIES[:20]) / 20 * 2
+            + sum(p["appreciationForecast"] for p in properties[:20]) / 20 * 2
         ),
     )
 
@@ -57,7 +66,7 @@ async def get_dashboard():
             "price": p["price"],
             "id": p["id"],
         }
-        for p in PROPERTIES[:40]
+        for p in properties[:40]
     ]
 
     return {

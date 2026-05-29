@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -15,6 +15,6 @@ class BaseAgent(ABC):
         return {
             "agent": self.name,
             "description": self.description,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "data": data,
         }

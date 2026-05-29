@@ -1,7 +1,7 @@
 from openai import AsyncOpenAI
 
 from app.core.config import settings
-from app.services.data_store import PROPERTIES, filter_properties
+from app.services.property_repository import property_repository
 
 
 class AIService:
@@ -13,7 +13,7 @@ class AIService:
         )
 
     async def chat(self, message: str, history: list[dict] | None = None) -> str:
-        context = self._build_context(message)
+        context = await self._build_context(message)
         if not self.client:
             return self._mock_response(message, context)
 
@@ -40,9 +40,18 @@ class AIService:
         )
         return response.choices[0].message.content or ""
 
-    def _build_context(self, message: str) -> str:
-        filtered = filter_properties(query=message)
-        top = filtered[:8] if filtered else PROPERTIES[:8]
+    async def _build_context(self, message: str) -> str:
+        try:
+            all_properties = await property_repository.list_properties(limit=120, offset=0)
+        except Exception:
+            all_properties = []
+
+        q = message.lower().strip()
+        filtered = [
+            p for p in all_properties
+            if q and q in f"{p['address']} {p['city']} {p['state']} {p['zipCode']}".lower()
+        ]
+        top = filtered[:8] if filtered else all_properties[:8]
         lines = []
         for p in top:
             lines.append(
@@ -51,29 +60,25 @@ class AIService:
             )
         market = (
             "Market snapshot: median cap ~5.2%, rental demand remains strong in urban cores, "
-            f"{len([p for p in PROPERTIES if p['undervalued']])} undervalued flags."
+            f"{len([p for p in all_properties if p['undervalued']])} undervalued flags."
         )
         return market + "\n" + "\n".join(lines)
 
     def _mock_response(self, message: str, context: str) -> str:
         msg = message.lower()
+        # Offline fallback keeps assistant usable when OpenAI is unavailable.
+        sample_count = max(1, context.count("- "))
         if "cash flow" in msg:
-            top = sorted(PROPERTIES, key=lambda x: x["monthlyCashFlow"], reverse=True)[:3]
-            addrs = ", ".join(f"{p['address']} (${p['monthlyCashFlow']}/mo)" for p in top)
             return (
-                f"**Top cash flow opportunities:** {addrs}. "
+                "**Top cash flow opportunities:** focus on high rental-yield assets in your selected markets. "
                 "These properties combine strong rental yields with below-median risk scores. "
                 "I recommend stress-testing vacancy at 8% and reviewing insurance trends."
             )
         if "undervalued" in msg or "multifamily" in msg:
-            und = [p for p in PROPERTIES if p["undervalued"]][:5]
-            if not und:
-                return "No undervalued flags currently; widen ROI filters or check multifamily inventory."
-            lines = "\n".join(
-                f"• **{p['address']}** — ${p['price']:,}, AI {p['aiScore']}, ROI {p['estimatedRoi']}%"
-                for p in und
+            return (
+                "**Undervalued opportunities:** Prioritize properties with AI score > 80, ROI > 12%, "
+                "and risk < 45. Consider LOI within 14 days for top-scored assets."
             )
-            return f"**Undervalued opportunities:**\n{lines}\n\nConsider LOI within 14 days for top-scored assets."
         if "market" in msg:
             return (
                 "**Market snapshot:** Absorption is improving with "
@@ -87,7 +92,7 @@ class AIService:
                 "Example: compare prop-001 vs prop-012 for side-by-side thesis."
             )
         return (
-            f"I analyzed your question against **{len(PROPERTIES)} active listings**. "
+            f"I analyzed your question against **{sample_count} active context entries**. "
             "Ask about cash flow, undervalued multifamily, market trends, or specific addresses. "
             f"\n\n_Context preview:_\n{context[:500]}..."
         )

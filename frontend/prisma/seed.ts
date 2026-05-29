@@ -6,23 +6,38 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("Seeding Estate AI database...");
 
-  await prisma.comparable.deleteMany();
-  await prisma.aIReport.deleteMany();
-  await prisma.savedProperty.deleteMany();
-  await prisma.marketMetric.deleteMany();
-  await prisma.portfolioHolding.deleteMany();
-  await prisma.portfolio.deleteMany();
-  await prisma.property.deleteMany();
-  await prisma.chatMessage.deleteMany();
-  await prisma.watchlist.deleteMany();
-  await prisma.savedSearch.deleteMany();
-  await prisma.user.deleteMany();
-
   const properties = generateProperties(75);
 
   for (const p of properties) {
-    await prisma.property.create({
-      data: {
+    await prisma.property.upsert({
+      where: { id: p.id },
+      update: {
+        id: p.id,
+        address: p.address,
+        city: p.city,
+        state: p.state,
+        zipCode: p.zipCode,
+        latitude: p.latitude,
+        longitude: p.longitude,
+        price: p.price,
+        beds: p.beds,
+        baths: p.baths,
+        sqft: p.sqft,
+        propertyType: p.propertyType as PropertyType,
+        imageUrl: p.imageUrl,
+        images: p.images,
+        estimatedRoi: p.estimatedRoi,
+        capRate: p.capRate,
+        rentalYield: p.rentalYield,
+        appreciationForecast: p.appreciationForecast,
+        aiScore: p.aiScore,
+        riskScore: p.riskScore,
+        undervalued: p.undervalued,
+        rentalDemand: p.rentalDemand,
+        yearBuilt: p.yearBuilt,
+        description: p.description,
+      },
+      create: {
         id: p.id,
         address: p.address,
         city: p.city,
@@ -78,11 +93,16 @@ async function main() {
     });
   }
 
-  const demoUser = await prisma.user.create({
-    data: {
+  const demoUser = await prisma.user.upsert({
+    where: { email: "demo@estateai.com" },
+    update: {
+      name: "Demo Investor",
+      supabaseUserId: "00000000-0000-0000-0000-000000000001",
+    },
+    create: {
       email: "demo@estateai.com",
       name: "Demo Investor",
-      clerkId: "demo_user",
+      supabaseUserId: "00000000-0000-0000-0000-000000000001",
       portfolio: {
         create: {
           totalValue: 2840000,
@@ -96,8 +116,15 @@ async function main() {
 
   const topProps = properties.slice(0, 5);
   for (const p of topProps) {
-    await prisma.savedProperty.create({
-      data: { userId: demoUser.id, propertyId: p.id },
+    await prisma.savedProperty.upsert({
+      where: {
+        userId_propertyId: {
+          userId: demoUser.id,
+          propertyId: p.id,
+        },
+      },
+      update: {},
+      create: { userId: demoUser.id, propertyId: p.id },
     });
   }
 

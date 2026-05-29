@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from app.services.agents.investor_report import InvestorReportAgent
@@ -7,7 +7,7 @@ from app.services.agents.market_analysis import MarketAnalysisAgent
 from app.services.agents.opportunity_detection import OpportunityDetectionAgent
 from app.services.agents.portfolio_optimization import PortfolioOptimizationAgent
 from app.services.agents.property_scoring import PropertyScoringAgent
-from app.services.data_store import PROPERTIES, get_property
+from app.services.property_repository import property_repository
 
 
 class AgentOrchestrator:
@@ -38,7 +38,11 @@ class AgentOrchestrator:
                 self.agents["opportunity_detection"].run(params),
             ]
         elif workflow == "property_report":
-            prop = get_property(property_id) if property_id else None
+            prop = (
+                await property_repository.get_property(property_id)
+                if property_id
+                else None
+            )
             tasks = [
                 self.agents["property_scoring"].run({"property_id": property_id}),
                 self.agents["investor_report"].run({"property": prop}),
@@ -54,7 +58,7 @@ class AgentOrchestrator:
         results = await asyncio.gather(*tasks, return_exceptions=True)
         output = {
             "workflow": workflow,
-            "completedAt": datetime.utcnow().isoformat(),
+            "completedAt": datetime.now(UTC).isoformat(),
             "results": [],
         }
         for r in results:

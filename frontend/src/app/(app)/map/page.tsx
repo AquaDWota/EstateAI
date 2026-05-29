@@ -1,11 +1,22 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { PropertyMap } from "@/components/maps/property-map";
-import { MOCK_PROPERTIES } from "@/lib/property-generator";
+import { apiFetch } from "@/lib/api";
+import type { PropertyData } from "@/lib/property-generator";
 
 export default function MapPage() {
   const router = useRouter();
+  const { data, isLoading } = useQuery({
+    queryKey: ["map-properties"],
+    queryFn: () => apiFetch<{ items: PropertyData[] }>("/properties?limit=200"),
+  });
+  const properties = data?.items ?? [];
+
+  if (isLoading) {
+    return <div className="h-[70vh] animate-pulse rounded bg-muted" />;
+  }
 
   return (
     <div className="space-y-6">
@@ -16,7 +27,7 @@ export default function MapPage() {
         </p>
       </div>
       <PropertyMap
-        properties={MOCK_PROPERTIES}
+        properties={properties}
         height="calc(100vh - 12rem)"
         onSelect={(id) => router.push(`/properties/${id}`)}
       />

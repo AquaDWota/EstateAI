@@ -1,5 +1,5 @@
 from app.services.agents.base import BaseAgent
-from app.services.data_store import PROPERTIES
+from app.services.property_repository import property_repository
 
 
 class OpportunityDetectionAgent(BaseAgent):
@@ -7,12 +7,13 @@ class OpportunityDetectionAgent(BaseAgent):
     description = "Finds undervalued properties and high-growth areas"
 
     async def run(self, params: dict) -> dict:
-        undervalued = [p for p in PROPERTIES if p["undervalued"]][:10]
+        properties = await property_repository.list_properties(limit=300, offset=0)
+        undervalued = [p for p in properties if p["undervalued"]][:10]
         high_growth = sorted(
-            PROPERTIES, key=lambda x: x["appreciationForecast"], reverse=True
+            properties, key=lambda x: x["appreciationForecast"], reverse=True
         )[:5]
         high_flow = sorted(
-            PROPERTIES, key=lambda x: x["monthlyCashFlow"], reverse=True
+            properties, key=lambda x: x["price"] * 0.0032, reverse=True
         )[:5]
 
         zones = [
@@ -22,7 +23,7 @@ class OpportunityDetectionAgent(BaseAgent):
         ]
 
         return self._result({
-            "undervaluedCount": len([p for p in PROPERTIES if p["undervalued"]]),
+            "undervaluedCount": len([p for p in properties if p["undervalued"]]),
             "undervalued": [
                 {
                     "id": p["id"],
@@ -39,7 +40,7 @@ class OpportunityDetectionAgent(BaseAgent):
                 for p in high_growth
             ],
             "topCashFlow": [
-                {"id": p["id"], "address": p["address"], "cashFlow": p["monthlyCashFlow"]}
+                {"id": p["id"], "address": p["address"], "cashFlow": round(p["price"] * 0.0032)}
                 for p in high_flow
             ],
         })

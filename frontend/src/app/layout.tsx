@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ClerkProvider } from "@clerk/nextjs";
 import "leaflet/dist/leaflet.css";
 import "./globals.css";
 import { AppProviders } from "./providers";
-import { FloatingCommandPalette } from "@/components/ai/floating-command-palette";
-import { FloatingCopilot } from "@/components/ai/floating-copilot";
+import { AppOverlays } from "@/components/layout/app-overlays";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,23 +26,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const clerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-
-  const content = (
+  return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <AppProviders>
           {children}
-          <FloatingCommandPalette />
-          <FloatingCopilot />
+          <AppOverlays />
         </AppProviders>
       </body>
     </html>
   );
-
-  if (clerkKey) {
-    return <ClerkProvider>{content}</ClerkProvider>;
-  }
-
-  return content;
 }

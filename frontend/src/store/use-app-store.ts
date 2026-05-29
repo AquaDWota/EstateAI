@@ -37,7 +37,7 @@ export const useAppStore = create<AppState>()(
       timeRange: "6M",
       commandPaletteOpen: false,
       darkMode: false,
-      aiCopilotOpen: true,
+      aiCopilotOpen: false,
       addToWatchlist: (propertyId) =>
         set((s) => ({
           watchlist: s.watchlist.includes(propertyId)

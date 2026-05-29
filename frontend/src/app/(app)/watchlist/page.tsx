@@ -1,14 +1,20 @@
 "use client";
 
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import { useAppStore } from "@/store/use-app-store";
-import { MOCK_PROPERTIES } from "@/lib/property-generator";
+import { apiFetch } from "@/lib/api";
+import type { PropertyData } from "@/lib/property-generator";
 import { PropertyCard } from "@/components/properties/property-card";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default function WatchlistPage() {
   const watchlist = useAppStore((s) => s.watchlist);
-  const properties = MOCK_PROPERTIES.filter((p) => watchlist.includes(p.id));
+  const { data } = useQuery({
+    queryKey: ["watchlist-properties", watchlist],
+    queryFn: () => apiFetch<{ items: PropertyData[] }>("/properties?limit=100"),
+  });
+  const properties = (data?.items ?? []).filter((p) => watchlist.includes(p.id));
 
   return (
     <div className="space-y-8">

@@ -54,10 +54,14 @@ export function FloatingCommandPalette() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.98 }}
             className="fixed left-1/2 top-20 z-[61] w-[92vw] max-w-xl -translate-x-1/2 rounded-xl border border-border bg-card p-3 shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-label="EstateAI command palette"
           >
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
+                autoFocus
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Ask EstateAI or jump to a page..."

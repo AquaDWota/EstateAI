@@ -18,6 +18,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store/use-app-store";
+import { useAuth } from "@/components/auth/auth-provider";
 
 const links = [
   { href: "/#features", label: "Features" },
@@ -36,6 +37,7 @@ export function Navbar({ dark = false }: { dark?: boolean }) {
   const darkMode = useAppStore((s) => s.darkMode);
   const toggleDarkMode = useAppStore((s) => s.toggleDarkMode);
   const setCommandPaletteOpen = useAppStore((s) => s.setCommandPaletteOpen);
+  const { user, enabled, signOut } = useAuth();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
@@ -110,9 +112,35 @@ export function Navbar({ dark = false }: { dark?: boolean }) {
           <button onClick={toggleDarkMode} className="rounded-md p-2 hover:bg-muted" aria-label="Toggle dark mode">
             {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
-          <button className="rounded-md p-2 hover:bg-muted" aria-label="Profile menu">
-            <CircleUserRound className="h-4 w-4" />
-          </button>
+          {!enabled ? (
+            <Link
+              href="/sign-in"
+              className="rounded-md p-2 hover:bg-muted"
+              aria-label="Profile menu"
+            >
+              <CircleUserRound className="h-4 w-4" />
+            </Link>
+          ) : user ? (
+            <>
+              <span className="max-w-[180px] truncate text-xs text-muted-foreground">
+                {user.email}
+              </span>
+              <Button variant="outline" size="sm" onClick={() => void signOut()}>
+                Log out
+              </Button>
+            </>
+          ) : (
+            <>
+              <Link href="/sign-in">
+                <Button variant="outline" size="sm">
+                  Log in
+                </Button>
+              </Link>
+              <Link href="/sign-up">
+                <Button size="sm">Sign up</Button>
+              </Link>
+            </>
+          )}
         </div>
 
         <button
@@ -150,6 +178,30 @@ export function Navbar({ dark = false }: { dark?: boolean }) {
                 Try AI Assistant
               </Button>
             </Link>
+            {enabled && !user && (
+              <>
+                <Link href="/sign-in" onClick={() => setOpen(false)}>
+                  <Button variant="outline" className="w-full">
+                    Log in
+                  </Button>
+                </Link>
+                <Link href="/sign-up" onClick={() => setOpen(false)}>
+                  <Button className="w-full">Sign up</Button>
+                </Link>
+              </>
+            )}
+            {enabled && user && (
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  void signOut();
+                  setOpen(false);
+                }}
+              >
+                Log out
+              </Button>
+            )}
             <Link href="/dashboard" onClick={() => setOpen(false)}>
               <Button className="w-full">View Dashboard</Button>
             </Link>

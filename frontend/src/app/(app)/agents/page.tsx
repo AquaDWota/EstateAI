@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Bot, Play, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { API_URL } from "@/lib/api";
+import { apiFetch } from "@/lib/api";
 
 const AGENTS = [
   {
@@ -42,11 +42,10 @@ export default function AgentsPage() {
     setRunning(agentId);
     setResult(null);
     try {
-      const res = await fetch(
-        `${API_URL}/api/v1/agents/run?agent_name=${agentId}`,
-        { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }
+      const data = await apiFetch<Record<string, unknown>>(
+        `/agents/run?agent_name=${agentId}`,
+        { method: "POST", body: "{}" }
       );
-      const data = await res.json();
       setResult(data);
     } catch {
       setResult({
@@ -60,12 +59,11 @@ export default function AgentsPage() {
   const runFullWorkflow = async () => {
     setRunning("workflow");
     try {
-      const res = await fetch(`${API_URL}/api/v1/agents/workflow`, {
+      const data = await apiFetch<Record<string, unknown>>("/agents/workflow", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ workflow: "full_analysis" }),
       });
-      setResult(await res.json());
+      setResult(data);
     } catch {
       setResult({ error: "Start backend for orchestrated workflows" });
     }
